@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import Base, engine, ensure_contact_schema
 from routers import agenda, auth, contatos, demandas, sync, visitas
+from seed import seed_demo_data
 
 ALLOWED_ORIGINS = [
     "http://localhost:8085",
@@ -20,6 +21,7 @@ WEB_INDEX = WEB_BUILD_DIR / "index.html"
 
 Base.metadata.create_all(bind=engine)
 ensure_contact_schema()
+seed_demo_data()
 
 app = FastAPI(
     title="Gabinete IA - API Mobile",
