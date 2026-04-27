@@ -604,11 +604,17 @@ async function api(path, options = {}) {
   try {
     const response = await fetch(`${API}${path}`, { ...options, headers });
     if (response.status === 204) return null;
-    const contentType = response.headers.get("content-type") || "";
-    if (!contentType.includes("application/json")) {
+    const raw = await response.text();
+    const trimmed = raw.trim().toLowerCase();
+    if (!raw || trimmed.startsWith("<!doctype") || trimmed.startsWith("<html")) {
       return demoApi(path, options);
     }
-    const payload = await response.json();
+    let payload;
+    try {
+      payload = JSON.parse(raw);
+    } catch (_) {
+      return demoApi(path, options);
+    }
     if (!response.ok) throw new Error(payload?.error?.message || payload?.detail || "Falha na requisicao.");
     return payload;
   } catch (error) {
@@ -1975,8 +1981,10 @@ async function login(event) {
   const data = Object.fromEntries(new FormData(event.currentTarget).entries());
   try {
     const payload = await api("/auth/login", { method: "POST", body: JSON.stringify(data) });
-    state.token = payload.data.access_token;
+    const authData = payload.data || payload;
+    state.token = authData.access_token;
     localStorage.setItem("gabinete_mandato_token", state.token);
+    if (authData.user) state.user = authData.user;
     showApp();
     await loadData();
     setMessage("#login-message", "");
