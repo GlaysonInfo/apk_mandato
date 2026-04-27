@@ -14,8 +14,25 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-connect_args = {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
-engine = create_engine(settings.DATABASE_URL, connect_args=connect_args)
+
+
+def normalize_database_url(database_url: str) -> str:
+    url = database_url.strip()
+    if not url or url.lower() == "failed":
+        raise RuntimeError(
+            "DATABASE_URL invalida. Configure a Internal Database URL do PostgreSQL "
+            "do Render na variavel DATABASE_URL."
+        )
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+psycopg://", 1)
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return url
+
+
+database_url = normalize_database_url(settings.DATABASE_URL)
+connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
+engine = create_engine(database_url, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
