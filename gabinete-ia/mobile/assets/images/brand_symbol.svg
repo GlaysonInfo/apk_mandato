@@ -1,0 +1,31 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brainStroke" x1="10" y1="10" x2="54" y2="90" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#54C8F5"/>
+      <stop offset="1" stop-color="#0E6EC4"/>
+    </linearGradient>
+    <linearGradient id="mapFill" x1="66" y1="14" x2="108" y2="108" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C8F24A"/>
+      <stop offset="0.58" stop-color="#79CF39"/>
+      <stop offset="1" stop-color="#3A9C38"/>
+    </linearGradient>
+    <linearGradient id="mapShade" x1="72" y1="28" x2="98" y2="96" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8ED04A" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#2D8533" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+  <path d="M22 76C14 71 10 63 10 54C10 43 15 34 24 29C25 19 33 12 44 12C54 12 62 18 66 27C77 29 86 39 86 51C86 63 78 73 67 76V84C67 95 58 104 47 104H36C28 104 22 98 22 90V76Z" stroke="url(#brainStroke)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M37 26C33 31 31 35 31 42C24 45 20 51 20 58C20 64 23 69 29 73" stroke="url(#brainStroke)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M52 24C57 30 59 35 59 42" stroke="url(#brainStroke)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M44 44V89" stroke="url(#brainStroke)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M29 57H44H59" stroke="url(#brainStroke)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M59 40V68L71 58" stroke="url(#brainStroke)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="29" cy="57" r="5" fill="#E9F8FF" stroke="#54C8F5" stroke-width="2"/>
+  <circle cx="44" cy="44" r="5" fill="#E9F8FF" stroke="#54C8F5" stroke-width="2"/>
+  <circle cx="59" cy="40" r="5" fill="#E9F8FF" stroke="#54C8F5" stroke-width="2"/>
+  <circle cx="59" cy="68" r="5" fill="#E9F8FF" stroke="#54C8F5" stroke-width="2"/>
+  <path d="M64 10H69V110H64V10Z" fill="#F4FBFF"/>
+  <path d="M75 18L103 15L112 24L107 35L111 49L105 58L107 72L96 81L95 94L83 100L72 95L70 80L73 68L67 56L71 42L67 28L75 18Z" fill="url(#mapFill)"/>
+  <path d="M81 33L95 40M85 58L96 49M80 73L92 85M90 24L101 32M74 54L84 60" stroke="#59A53D" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+  <path d="M76 20L103 16L111 24L107 35L111 49L105 58L107 72L96 81L95 94L83 100L72 95L70 80L73 68L67 56L71 42L67 28L76 20Z" fill="url(#mapShade)"/>
+</svg>
