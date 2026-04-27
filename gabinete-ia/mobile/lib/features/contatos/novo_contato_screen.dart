@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/constants.dart';
-import '../../core/local_db.dart';
+import '../../core/local_store.dart';
 import '../../core/sync_service.dart';
 import '../../core/theme.dart';
 import '../../shared/app_logo_mark.dart';
@@ -115,9 +115,7 @@ class _NovoContatoScreenState extends State<NovoContatoScreen> {
 
       final id = const Uuid().v4();
       final now = DateTime.now().toIso8601String();
-      final db = await LocalDb.instance;
-
-      await db.insert(AppConstants.tContatos, {
+      await LocalStore.insert(AppConstants.tContatos, {
         'id': id,
         'nome': _nomeCtrl.text.trim(),
         'telefone_principal': _telefoneCtrl.text.trim(),

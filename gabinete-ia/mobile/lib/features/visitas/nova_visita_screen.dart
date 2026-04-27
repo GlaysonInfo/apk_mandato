@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/constants.dart';
-import '../../core/local_db.dart';
+import '../../core/local_store.dart';
 import '../../core/sync_service.dart';
 import '../../core/theme.dart';
 import '../../shared/preview_app_bar.dart';
@@ -72,9 +72,7 @@ class _NovaVisitaScreenState extends State<NovaVisitaScreen> {
       }
 
       final id = const Uuid().v4();
-      final db = await LocalDb.instance;
-
-      await db.insert(AppConstants.tVisitas, {
+      await LocalStore.insert(AppConstants.tVisitas, {
         'id': id,
         'tipo': _tipo,
         'data_hora': _dataHora.toIso8601String(),

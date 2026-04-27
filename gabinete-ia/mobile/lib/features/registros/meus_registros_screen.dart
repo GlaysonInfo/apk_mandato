@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/constants.dart';
-import '../../core/local_db.dart';
+import '../../core/local_store.dart';
 import '../../core/preview_data.dart';
 import '../../core/theme.dart';
 import '../../shared/preview_app_bar.dart';
@@ -52,10 +52,9 @@ class _MeusRegistrosScreenState extends State<MeusRegistrosScreen>
       return;
     }
 
-    final db = await LocalDb.instance;
-    final contatos = await db.query(AppConstants.tContatos, orderBy: 'created_at DESC');
-    final demandas = await db.query(AppConstants.tDemandas, orderBy: 'created_at DESC');
-    final visitas = await db.query(AppConstants.tVisitas, orderBy: 'created_at DESC');
+    final contatos = await LocalStore.query(AppConstants.tContatos, orderBy: 'created_at DESC');
+    final demandas = await LocalStore.query(AppConstants.tDemandas, orderBy: 'created_at DESC');
+    final visitas = await LocalStore.query(AppConstants.tVisitas, orderBy: 'created_at DESC');
     if (mounted) {
       setState(() {
         _contatos = contatos;
@@ -95,8 +94,7 @@ class _MeusRegistrosScreenState extends State<MeusRegistrosScreen>
       return;
     }
 
-    final db = await LocalDb.instance;
-    await db.update(table, changes, where: 'id = ?', whereArgs: [item['id']]);
+    await LocalStore.update(table, changes, id: item['id'].toString());
     await _load();
   }
 

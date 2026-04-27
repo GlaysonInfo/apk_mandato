@@ -4,7 +4,7 @@ import 'package:sqflite/sqflite.dart';
 
 import 'api_client.dart';
 import 'constants.dart';
-import 'local_db.dart';
+import 'local_store.dart';
 
 class SyncService {
   static Future<Map<String, int>> syncAll() async {
@@ -12,15 +12,10 @@ class SyncService {
       return {'success': 0, 'errors': 0};
     }
 
-    final db = await LocalDb.instance;
     var success = 0;
     var errors = 0;
 
-    final pending = await db.query(
-      AppConstants.tSyncQueue,
-      where: 'status = ?',
-      whereArgs: ['PENDENTE'],
-    );
+    final pending = await LocalStore.pendingSyncQueue();
 
     if (pending.isEmpty) {
       return {'success': 0, 'errors': 0};
@@ -41,31 +36,23 @@ class SyncService {
       final data = res.data as Map<String, dynamic>;
 
       for (final processed in (data['processed'] as List<dynamic>)) {
-        await db.update(
+        await LocalStore.update(
           AppConstants.tSyncQueue,
           {'status': 'ENVIADO'},
-          where: 'client_generated_id = ?',
-          whereArgs: [processed['client_generated_id']],
+          id: processed['client_generated_id'].toString(),
         );
         success++;
       }
 
       for (final itemError in (data['errors'] as List<dynamic>)) {
-        final currentAttempts = Sqflite.firstIntValue(
-              await db.rawQuery(
-                'SELECT tentativas FROM ${AppConstants.tSyncQueue} WHERE client_generated_id = ?',
-                [itemError['client_generated_id']],
-              ),
-            ) ??
-            0;
-        await db.update(
+        final currentAttempts = await LocalStore.syncAttempts(itemError['client_generated_id'].toString());
+        await LocalStore.update(
           AppConstants.tSyncQueue,
           {
             'status': 'ERRO',
             'tentativas': currentAttempts + 1,
           },
-          where: 'client_generated_id = ?',
-          whereArgs: [itemError['client_generated_id']],
+          id: itemError['client_generated_id'].toString(),
         );
         errors++;
       }
@@ -85,8 +72,7 @@ class SyncService {
       return;
     }
 
-    final db = await LocalDb.instance;
-    await db.insert(
+    await LocalStore.insert(
       AppConstants.tSyncQueue,
       {
         'id': clientId,
@@ -106,7 +92,6 @@ class SyncService {
       return [];
     }
 
-    final db = await LocalDb.instance;
-    return db.query(AppConstants.tSyncQueue, orderBy: 'created_at DESC');
+    return LocalStore.query(AppConstants.tSyncQueue, orderBy: 'created_at DESC');
   }
 }
