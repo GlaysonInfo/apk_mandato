@@ -246,9 +246,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Wrap(
                   spacing: 10,
                   runSpacing: 10,
-                  children: PreviewData.dashboardMetrics
-                      .map((metric) => _PreviewMetricCard(metric: metric))
-                      .toList(),
+                  children: PreviewData.dashboardMetrics.map((metric) {
+                    final label = metric['label']?.toString() ?? '';
+                    return _PreviewMetricCard(
+                      metric: metric,
+                      onTap: () {
+                        if (label.contains('Contatos')) {
+                          _openScreen(const MeusRegistrosScreen(initialTab: 0, initialStatusFilter: 'ATIVO'));
+                        } else if (label.contains('Demandas')) {
+                          _openScreen(const MeusRegistrosScreen(initialTab: 1));
+                        } else if (label.contains('Agenda')) {
+                          _openScreen(const AgendaScreen());
+                        } else {
+                          _openScreen(const SyncScreen());
+                        }
+                      },
+                    );
+                  }).toList(),
                 ),
               ],
               const SizedBox(height: 20),
@@ -341,7 +355,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 12),
               _MenuTile(
                 icon: Icons.calendar_today_outlined,
-                label: 'Agenda do Dia',
+                label: 'Agenda e Compromissos',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const AgendaScreen()),
@@ -349,10 +363,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               _MenuTile(
                 icon: Icons.list_alt_outlined,
-                label: 'Meus Registros',
+                label: 'Contatos, Demandas e Visitas',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const MeusRegistrosScreen()),
+                ),
+              ),
+              _MenuTile(
+                icon: Icons.people_alt_outlined,
+                label: 'Contatos ativos',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MeusRegistrosScreen(initialTab: 0, initialStatusFilter: 'ATIVO')),
+                ),
+              ),
+              _MenuTile(
+                icon: Icons.assignment_turned_in_outlined,
+                label: 'Demandas abertas',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MeusRegistrosScreen(initialTab: 1, initialStatusFilter: 'ABERTA')),
                 ),
               ),
             ],
@@ -471,8 +501,9 @@ class _PreviewJourneyCard extends StatelessWidget {
 
 class _PreviewMetricCard extends StatelessWidget {
   final Map<String, dynamic> metric;
+  final VoidCallback onTap;
 
-  const _PreviewMetricCard({required this.metric});
+  const _PreviewMetricCard({required this.metric, required this.onTap});
 
   Color _accentColor() {
     switch (metric['accent']) {
@@ -493,33 +524,44 @@ class _PreviewMetricCard extends StatelessWidget {
 
     return SizedBox(
       width: (MediaQuery.of(context).size.width - 42) / 2,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.18)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              metric['value']?.toString() ?? '',
-              style: TextStyle(
-                color: color,
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withValues(alpha: 0.18)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      metric['value']?.toString() ?? '',
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: color),
+                ],
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              metric['label']?.toString() ?? '',
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontWeight: FontWeight.w600,
+              const SizedBox(height: 4),
+              Text(
+                metric['label']?.toString() ?? '',
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

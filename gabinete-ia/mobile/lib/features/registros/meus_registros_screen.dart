@@ -10,7 +10,14 @@ import '../../core/theme.dart';
 import '../../shared/preview_app_bar.dart';
 
 class MeusRegistrosScreen extends StatefulWidget {
-  const MeusRegistrosScreen({super.key});
+  final int initialTab;
+  final String? initialStatusFilter;
+
+  const MeusRegistrosScreen({
+    super.key,
+    this.initialTab = 0,
+    this.initialStatusFilter,
+  });
 
   @override
   State<MeusRegistrosScreen> createState() => _MeusRegistrosScreenState();
@@ -22,11 +29,14 @@ class _MeusRegistrosScreenState extends State<MeusRegistrosScreen>
   List<Map<String, dynamic>> _contatos = [];
   List<Map<String, dynamic>> _demandas = [];
   List<Map<String, dynamic>> _visitas = [];
+  String _statusFilter = 'TODOS';
+  String _query = '';
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this);
+    _tabs = TabController(length: 3, vsync: this, initialIndex: widget.initialTab.clamp(0, 2));
+    _statusFilter = widget.initialStatusFilter ?? 'TODOS';
     _load();
   }
 
@@ -64,6 +74,49 @@ class _MeusRegistrosScreenState extends State<MeusRegistrosScreen>
       default:
         return AppTheme.warning;
     }
+  }
+
+  List<Map<String, dynamic>> _filtered(List<Map<String, dynamic>> items, String titleKey) {
+    return items.where((item) {
+      final status = (item['status'] ?? item['sync_status'] ?? '').toString();
+      final title = (item[titleKey] ?? '').toString().toLowerCase();
+      final detail = item.values.join(' ').toLowerCase();
+      final matchesStatus = _statusFilter == 'TODOS' || status == _statusFilter;
+      final matchesQuery = _query.isEmpty || title.contains(_query.toLowerCase()) || detail.contains(_query.toLowerCase());
+      return matchesStatus && matchesQuery;
+    }).toList();
+  }
+
+  Future<void> _updateLocal(String table, Map<String, dynamic> item, Map<String, dynamic> changes) async {
+    if (AppConstants.previewMode) {
+      setState(() {
+        item.addAll(changes);
+      });
+      return;
+    }
+
+    final db = await LocalDb.instance;
+    await db.update(table, changes, where: 'id = ?', whereArgs: [item['id']]);
+    await _load();
+  }
+
+  Future<void> _openDetail(Map<String, dynamic> item, String type) async {
+    final table = switch (type) {
+      'contato' => AppConstants.tContatos,
+      'demanda' => AppConstants.tDemandas,
+      _ => AppConstants.tVisitas,
+    };
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _RegistroDetailScreen(
+          item: item,
+          type: type,
+          onUpdate: (changes) => _updateLocal(table, item, changes),
+        ),
+      ),
+    );
+    await _load();
   }
 
   String _detailForItem(Map<String, dynamic> item, String type) {
@@ -135,6 +188,8 @@ class _MeusRegistrosScreenState extends State<MeusRegistrosScreen>
   }
 
   Widget _buildList(List<Map<String, dynamic>> items, String titleKey, String type) {
+    final filtered = _filtered(items, titleKey);
+
     if (items.isEmpty) {
       return Center(
         child: Text(
@@ -144,11 +199,48 @@ class _MeusRegistrosScreenState extends State<MeusRegistrosScreen>
       );
     }
 
-    return ListView.builder(
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Column(
+            children: [
+              TextField(
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.search),
+                  labelText: 'Buscar',
+                ),
+                onChanged: (value) => setState(() => _query = value),
+              ),
+              const SizedBox(height: 10),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: ['TODOS', 'ATIVO', 'ABERTA', 'PENDENTE', 'ENVIADO', 'ERRO', 'CONCLUIDA', 'ARQUIVADA']
+                      .map(
+                        (status) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(status == 'TODOS' ? 'Todos' : status),
+                            selected: _statusFilter == status,
+                            onSelected: (_) => setState(() => _statusFilter = status),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: filtered.isEmpty
+              ? const Center(child: Text('Nenhum registro para este filtro.', style: TextStyle(color: AppTheme.textSecondary)))
+              : ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: items.length,
+      itemCount: filtered.length,
       itemBuilder: (context, index) {
-        final item = items[index];
+        final item = filtered[index];
         final sync = item['sync_status'] as String?;
         final createdAt = item['created_at'] as String?;
         final detail = _detailForItem(item, type);
@@ -159,6 +251,7 @@ class _MeusRegistrosScreenState extends State<MeusRegistrosScreen>
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
+            onTap: () => _openDetail(item, type),
             leading: type == 'contato'
                 ? _ContactAvatar(photoBase64: item['foto_base64']?.toString(), label: item[titleKey]?.toString() ?? '')
                 : null,
@@ -186,6 +279,124 @@ class _MeusRegistrosScreenState extends State<MeusRegistrosScreen>
           ),
         );
       },
+    ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RegistroDetailScreen extends StatefulWidget {
+  final Map<String, dynamic> item;
+  final String type;
+  final Future<void> Function(Map<String, dynamic> changes) onUpdate;
+
+  const _RegistroDetailScreen({
+    required this.item,
+    required this.type,
+    required this.onUpdate,
+  });
+
+  @override
+  State<_RegistroDetailScreen> createState() => _RegistroDetailScreenState();
+}
+
+class _RegistroDetailScreenState extends State<_RegistroDetailScreen> {
+  late final TextEditingController _titleCtrl;
+  late final TextEditingController _descCtrl;
+  late String _status;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleCtrl = TextEditingController(text: (widget.item[widget.type == 'contato' ? 'nome' : widget.type == 'demanda' ? 'titulo' : 'tipo'] ?? '').toString());
+    _descCtrl = TextEditingController(text: (widget.item['descricao'] ?? widget.item['observacoes'] ?? widget.item['local'] ?? '').toString());
+    _status = (widget.item['status'] ?? widget.item['sync_status'] ?? 'PENDENTE').toString();
+  }
+
+  @override
+  void dispose() {
+    _titleCtrl.dispose();
+    _descCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save([String? status]) async {
+    setState(() => _saving = true);
+    final titleKey = widget.type == 'contato'
+        ? 'nome'
+        : widget.type == 'demanda'
+            ? 'titulo'
+            : 'tipo';
+    final descKey = widget.type == 'contato' ? 'observacoes' : widget.type == 'demanda' ? 'descricao' : 'local';
+    await widget.onUpdate({
+      titleKey: _titleCtrl.text.trim(),
+      descKey: _descCtrl.text.trim(),
+      if (status != null) 'status': status,
+      if (status != null) 'sync_status': 'PENDENTE',
+    });
+    if (!mounted) return;
+    setState(() {
+      _saving = false;
+      if (status != null) _status = status;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(status == null ? 'Registro atualizado.' : 'Status atualizado para $status.'), backgroundColor: AppTheme.success),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final title = switch (widget.type) {
+      'contato' => 'Contato',
+      'demanda' => 'Demanda',
+      _ => 'Visita',
+    };
+
+    return Scaffold(
+      appBar: PreviewAppBar(title: title, replaceOnNavigate: true),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          TextField(controller: _titleCtrl, decoration: InputDecoration(labelText: title)),
+          const SizedBox(height: 14),
+          TextField(controller: _descCtrl, minLines: 3, maxLines: 6, decoration: const InputDecoration(labelText: 'Detalhes')),
+          const SizedBox(height: 14),
+          InputDecorator(
+            decoration: const InputDecoration(labelText: 'Status atual'),
+            child: Text(_status, style: const TextStyle(fontWeight: FontWeight.w800)),
+          ),
+          const SizedBox(height: 22),
+          ElevatedButton.icon(
+            onPressed: _saving ? null : () => _save(),
+            icon: const Icon(Icons.save_outlined),
+            label: const Text('Salvar ajustes'),
+          ),
+          const SizedBox(height: 12),
+          if (widget.type == 'demanda') ...[
+            _action('Assumir / em atendimento', Icons.playlist_add_check, 'EM_ATENDIMENTO'),
+            _action('Fechar como concluida', Icons.check_circle_outline, 'CONCLUIDA'),
+            _action('Arquivar demanda', Icons.archive_outlined, 'ARQUIVADA'),
+          ],
+          if (widget.type == 'contato') ...[
+            _action('Marcar ativo', Icons.verified_user_outlined, 'ATIVO'),
+            _action('Restringir contato', Icons.lock_outline, 'RESTRITO'),
+            _action('Arquivar contato', Icons.archive_outlined, 'ARQUIVADO'),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _action(String label, IconData icon, String status) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: OutlinedButton.icon(
+        onPressed: _saving ? null : () => _save(status),
+        icon: Icon(icon),
+        label: Text(label),
+      ),
     );
   }
 }
