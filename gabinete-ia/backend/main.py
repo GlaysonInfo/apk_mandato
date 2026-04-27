@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI, Response
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import Base, engine, ensure_contact_schema
@@ -10,6 +14,9 @@ ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
+
+WEB_BUILD_DIR = Path(__file__).resolve().parents[1] / "mobile" / "build" / "web"
+WEB_INDEX = WEB_BUILD_DIR / "index.html"
 
 Base.metadata.create_all(bind=engine)
 ensure_contact_schema()
@@ -39,6 +46,9 @@ app.include_router(sync.router)
 
 @app.get("/")
 def root():
+    if WEB_INDEX.exists():
+        return FileResponse(WEB_INDEX)
+
     return {
         "service": "gabinete-ia-api",
         "status": "ok",
@@ -54,4 +64,12 @@ def health():
 
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
+    favicon_path = WEB_BUILD_DIR / "favicon.png"
+    if favicon_path.exists():
+        return FileResponse(favicon_path)
+
     return Response(status_code=204)
+
+
+if WEB_BUILD_DIR.exists():
+    app.mount("/", StaticFiles(directory=WEB_BUILD_DIR, html=True), name="flutter-web")

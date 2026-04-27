@@ -17,7 +17,9 @@ __pycache__/
 .env.*
 
 gabinete-ia/mobile/.dart_tool/
-gabinete-ia/mobile/build/
+gabinete-ia/mobile/build/*
+!gabinete-ia/mobile/build/web/
+!gabinete-ia/mobile/build/web/**
 gabinete-ia/mobile/.flutter-plugins
 gabinete-ia/mobile/.flutter-plugins-dependencies
 gabinete-ia/mobile/.metadata
