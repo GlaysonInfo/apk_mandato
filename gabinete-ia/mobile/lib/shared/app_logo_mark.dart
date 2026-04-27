@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 enum AppLogoVariant {
   auto,
@@ -19,7 +18,7 @@ class AppLogoMark extends StatelessWidget {
     this.variant = AppLogoVariant.auto,
   });
 
-  static const String _symbolAsset = 'assets/images/brand_symbol.svg';
+  static const String _logoAsset = 'assets/images/logo_app_mobile.jpg';
 
   @override
   Widget build(BuildContext context) {
@@ -39,11 +38,14 @@ class _BrandSymbol extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final symbol = SvgPicture.asset(
-      AppLogoMark._symbolAsset,
-      width: size,
-      height: size,
-      fit: BoxFit.contain,
+    final symbol = ClipRRect(
+      borderRadius: BorderRadius.circular(size * 0.22),
+      child: Image.asset(
+        AppLogoMark._logoAsset,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+      ),
     );
 
     if (!showHalo) {
@@ -53,8 +55,10 @@ class _BrandSymbol extends StatelessWidget {
     return Container(
       width: size,
       height: size,
+      padding: EdgeInsets.all(size * 0.04),
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(size * 0.28),
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF4FC5F4).withValues(alpha: 0.22),

@@ -1,36 +1,32 @@
-# APK Mandato - Cadastro de Campo
+# Gabinete IA - App Mobile
 
-Aplicativo/prototipo mobile do Gabinete IA para cadastro de campo, leitura territorial,
-demandas, agenda e relacionamento com a base.
+Aplicativo mobile do Gabinete IA para cadastro de campo, visitas, demandas,
+agenda e sincronizacao offline.
 
 ## Rodar localmente
 
-Na raiz do projeto:
+O app principal esta em `gabinete-ia/mobile`.
 
 ```powershell
-python -m http.server 8092 --bind 127.0.0.1
+cd gabinete-ia\mobile
+flutter run
 ```
 
-Depois acesse:
+O backend de apoio esta em `gabinete-ia/backend`.
 
-```text
-http://127.0.0.1:8092/
+```powershell
+cd gabinete-ia\backend
+uvicorn main:app --reload --port 8010
 ```
 
-Se a API real em `/api/v1` nao estiver disponivel, o app entra automaticamente em
-modo local/demo para permitir login, visualizacao dos paineis e cadastro de dados
-no navegador.
+Para apontar o app Flutter para uma API especifica, use:
 
-## Credencial demo
-
-```text
-E-mail: chefe@gabineteia.local
-Senha: Senha@123
+```powershell
+flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8010
 ```
 
 ## Estrutura
 
-- `index.html`, `styles.css`, `app.js`: prototipo web/mobile do cadastro de campo.
 - `gabinete-ia/backend`: API FastAPI em evolucao.
 - `gabinete-ia/mobile`: app Flutter em evolucao.
-- `Logo APP Mobile.jpg`: logo usada na tela inicial do app.
+- `gabinete-ia/mobile/assets/images/logo_app_mobile.jpg`: logo usada no app.

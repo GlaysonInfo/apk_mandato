@@ -6,6 +6,13 @@ __pycache__/
 *.sqlite3
 *.log
 
+/app.js
+/index.html
+/styles.css
+/Logo APP Mobile.jpg
+/Logo Gabinete IA.jpg
+/Sistema Mobile App.docx
+
 .env
 .env.*
 
