@@ -26,6 +26,7 @@ def seed_demo_data() -> None:
                 descricao="Ambiente inicial do app mobile",
             )
             db.add(gabinete)
+            db.flush()
 
         equipe = db.query(Equipe).filter(Equipe.id == DEMO_EQUIPE_ID).first()
         if not equipe:
@@ -34,9 +35,10 @@ def seed_demo_data() -> None:
                 gabinete_id=DEMO_GABINETE_ID,
                 nome="Equipe de Campo",
                 descricao="Equipe demo para acesso inicial",
-                supervisor_usuario_id=DEMO_USER_ID,
+                supervisor_usuario_id=None,
             )
             db.add(equipe)
+            db.flush()
 
         user = db.query(Usuario).filter(Usuario.email_login == DEMO_EMAIL).first()
         if not user:
@@ -52,6 +54,9 @@ def seed_demo_data() -> None:
                 ativo=True,
             )
             db.add(user)
+            db.flush()
+
+        equipe.supervisor_usuario_id = DEMO_USER_ID
 
         db.commit()
     finally:
