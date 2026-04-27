@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import declarative_base, sessionmaker
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -31,6 +32,12 @@ def normalize_database_url(database_url: str) -> str:
 
 
 database_url = normalize_database_url(settings.DATABASE_URL)
+parsed_database_url = make_url(database_url)
+if parsed_database_url.host in {"host", "hostname", "localhost"} and not database_url.startswith("sqlite"):
+    raise RuntimeError(
+        "DATABASE_URL esta com host placeholder. No Render, copie a Internal Database URL "
+        "real do PostgreSQL, nao o exemplo com '@host:5432'."
+    )
 connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
 engine = create_engine(database_url, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
